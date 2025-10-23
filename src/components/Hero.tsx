@@ -1,0 +1,25 @@
+import React from "react";
+import { Spotlight } from "./ui/Spotlight";
+import HeroContent from "./ui/HeroContent";
+import LostOrb from "./ui/LostOrb";
+
+export default function Hero() {
+    return (
+        <section id="home" className="flex flex-col min-h-screen w-full relative items-center justify-center bg-black bg-grid-white/[0.1]">
+            <div className="absolute pointer-events-none inset-0 flex items-center justify-center bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+            <Spotlight
+                className="-top-40 left-0 md:left-60 md:-top-20"
+                fill="orange"
+            />
+            <Spotlight
+                className="-top-40 left-20 md:left-80 md:-top-20"
+                fill="blue"
+            />
+            
+            <HeroContent />
+            <div className="w-full h-full absolute bottom-0">
+                <LostOrb />
+            </div>
+        </section>
+    );
+}
