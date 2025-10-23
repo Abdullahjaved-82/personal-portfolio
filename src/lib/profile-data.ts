@@ -217,9 +217,10 @@ export function deepMerge<T>(target: T, source: Partial<T>): T {
     return source as T;
   }
 
-  const result: Record<string, unknown> = Array.isArray(target)
+  // Treat arrays as mutable objects during merge while keeping the downstream shape typed.
+  const result = (Array.isArray(target)
     ? [...((target as unknown as Array<unknown>) ?? [])]
-    : { ...(target as Record<string, unknown>) };
+    : { ...(target as Record<string, unknown>) }) as Record<string, unknown>;
 
   Object.keys(source).forEach((key) => {
     const sourceValue = (source as Record<string, unknown>)[key];

@@ -1,7 +1,12 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { defaultProfile, mergeProfile, type ProfileData } from "@/lib/profile-data";
+import { defaultProfile as baseDefaultProfile, mergeProfile, type ProfileData } from "@/lib/profile-data";
+
+// Re-export the shared default profile snapshot for admin consumers.
+export const defaultProfile = baseDefaultProfile;
+export type ProfileShape = typeof defaultProfile;
+export type { ProfileData, SkillArea, ProjectItem, ProfileStat } from "@/lib/profile-data";
 
 type Nullable<T> = T | null;
 
@@ -74,7 +79,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<ProfileContextValue>(
-    () => ({ profile, isLoading, overwriteProfile, resetProfile, refreshProfile, defaultProfile }),
+  () => ({ profile, isLoading, overwriteProfile, resetProfile, refreshProfile, defaultProfile }),
     [profile, isLoading, overwriteProfile, resetProfile, refreshProfile]
   );
 
