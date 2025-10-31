@@ -6,7 +6,6 @@ import WebsiteMockup from "./ui/WebsiteMockup";
 import ProgLangList from "./ui/ProgLangList";
 
 const Services = () => {
-  console.log("Profile exports", Profile);
   const { profile } = Profile.useProfile();
 
   const layoutPresets = [
@@ -28,22 +27,14 @@ const Services = () => {
   ];
 
   return (
-    <section id="skills" className="w-full flex flex-col relative bg-grid-white/[0.05] py-20">
-      <div className="container mx-auto px-6 lg:px-12">
-        <span className="text-sm uppercase tracking-[0.4em] text-white/40">Skills</span>
-        <h3 className="text-3xl md:text-4xl text-white pt-4 max-w-2xl">
+    <section id="skills" className="w-full flex flex-col relative bg-grid-white/[0.05] py-20 pb-32">
+      <div className="container mx-auto px-6 lg:px-12 mb-12">
+        <span className="text-sm uppercase tracking-[0.4em] text-purple-400/60">Skills & Expertise</span>
+        <h3 className="text-3xl md:text-5xl font-semibold text-white pt-4 max-w-3xl leading-tight">
           {profile.skillsIntro}
         </h3>
       </div>
       <>
-        <div className="absolute pointer-events-none inset-0 top-0 flex items-center justify-center bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
-
-        <div className="h-[40vh] absolute w-full top-0"
-          style={{
-            background: "linear-gradient(0deg, rgba(22,26,66,0) 0%, rgba(0,0,0,1) 85%)"
-          }}
-        />
-
         <BentoGrid className="container mx-auto px-6 pb-20 lg:px-12">
           {profile.skills.map((skill, index) => (
             <BentoGridItem

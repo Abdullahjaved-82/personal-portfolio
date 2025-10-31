@@ -63,8 +63,9 @@ export const BackgroundGradientAnimation = ({
       if (!interactiveRef.current) {
         return;
       }
-      setCurX(curX + (tgX - curX) / 20);
-      setCurY(curY + (tgY - curY) / 20);
+      // Reduced smoothing factor for better performance (30 instead of 20)
+      setCurX(curX + (tgX - curX) / 30);
+      setCurY(curY + (tgY - curY) / 30);
       interactiveRef.current.style.transform = `translate(${Math.round(
         curX
       )}px, ${Math.round(curY)}px)`;
@@ -114,8 +115,8 @@ export const BackgroundGradientAnimation = ({
       <div className={cn("", className)}>{children}</div>
       <div
         className={cn(
-          "gradients-container h-full w-full blur-lg",
-          isSafari ? "blur-2xl" : "[filter:url(#blurMe)_blur(40px)]"
+          "gradients-container h-full w-full blur-md", // Reduced blur from blur-lg
+          isSafari ? "blur-xl" : "[filter:url(#blurMe)_blur(30px)]" // Reduced from blur-2xl and blur(40px)
         )}
       >
         <div

@@ -35,16 +35,4 @@ const testimonials = [
     title: "",
     img: "/works/works03.jpg",
   },
-  {
-    id: 14,
-    name: "Works04",
-    title: "",
-    img: "/works/works04.jpg",
-  },
-  {
-    id: 15,
-    name: "Works05",
-    title: "",
-    img: "/works/works05.jpg",
-  },
 ];

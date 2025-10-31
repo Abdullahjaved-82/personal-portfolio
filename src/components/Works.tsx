@@ -63,14 +63,15 @@ export default function Works() {
                         </div>
                     </div>
                     <div className="md:w-1/2">
-                        <div className="relative h-[260px] sm:h-[320px] md:h-[440px] overflow-hidden rounded-3xl bg-black/40">
+                        <div className="relative h-[240px] sm:h-[280px] md:h-[360px] overflow-hidden rounded-3xl bg-black/40">
                             <Image
                                 src={item.image}
                                 alt={item.title}
                                 fill
-                                className="object-cover duration-500 group-hover:scale-105"
+                                className="object-cover"
                                 loading="lazy"
-                                quality={75} // Optional: Adjust the quality for better performance
+                                quality={55}
+                                sizes="(max-width: 768px) 100vw, 50vw"
                             />
                         </div>
                     </div>

@@ -103,7 +103,7 @@ const defaultProfile: ProfileData = {
     ],
   },
   skillsIntro:
-    "A multidisciplinary toolkit that connects polished interfaces with intelligent, data-informed decision making.",
+    "Bridging modern web development with machine learning to build intelligent, scalable software solutions.",
   skills: [
     {
       id: "skill-web",
@@ -164,7 +164,7 @@ const defaultProfile: ProfileData = {
         "A responsive personal site with WebGL-enhanced hero experiences, editable content via admin tooling, and SEO-focused architecture.",
       techStack: "Next.js, TypeScript, Tailwind, Three.js",
       type: "Personal",
-      image: "/projects/ai-ready-portfolio.jpg",
+      image: "/works/works01.jpg",
       link: "https://github.com/abdullahjaved/portfolio",
       github: "https://github.com/abdullahjaved/portfolio",
     },
@@ -175,7 +175,7 @@ const defaultProfile: ProfileData = {
         "An image classification pipeline experimenting with data augmentation, transfer learning, and actionable model insights dashboards.",
       techStack: "Python, TensorFlow, FastAPI, Docker",
       type: "Research",
-      image: "/projects/vision-classifier-lab.jpg",
+      image: "/works/works02.jpg",
       link: "https://github.com/abdullahjaved/ml-classifier",
       github: "https://github.com/abdullahjaved/ml-classifier",
     },
@@ -186,7 +186,7 @@ const defaultProfile: ProfileData = {
         "A cross-platform Java desktop application that streamlines daily task management with offline storage and productivity analytics.",
       techStack: "Java, Swing, SQLite",
       type: "Personal",
-      image: "/projects/taskflow-manager.jpg",
+      image: "/works/works03.jpg",
       link: "https://github.com/abdullahjaved/java-task-manager",
       github: "https://github.com/abdullahjaved/java-task-manager",
     },

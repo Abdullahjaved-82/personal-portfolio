@@ -156,16 +156,16 @@ const config = {
         },
       },
       animation: {
-        aurora: "aurora 60s linear infinite",
+        aurora: "aurora 80s linear infinite", // Slowed from 60s
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         spotlight: "spotlight 2s ease .75s 1 forwards",
         shimmer: "shimmer 2s linear infinite",
-        first: "moveVertical 30s ease infinite",
-        second: "moveInCircle 20s reverse infinite",
-        third: "moveInCircle 40s linear infinite",
-        fourth: "moveHorizontal 40s ease infinite",
-        fifth: "moveInCircle 20s ease infinite",
+        first: "moveVertical 40s ease infinite", // Slowed from 30s
+        second: "moveInCircle 30s reverse infinite", // Slowed from 20s
+        third: "moveInCircle 50s linear infinite", // Slowed from 40s
+        fourth: "moveHorizontal 50s ease infinite", // Slowed from 40s
+        fifth: "moveInCircle 30s ease infinite", // Slowed from 20s
         scroll:
           "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
       },

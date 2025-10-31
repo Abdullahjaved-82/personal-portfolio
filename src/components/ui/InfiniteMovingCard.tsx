@@ -72,11 +72,11 @@ export const InfiniteMovingCards = ({
   const getSpeed = () => {
     if (containerRef.current) {
       if (speed === "fast") {
-        containerRef.current.style.setProperty("--animation-duration", "20s");
+        containerRef.current.style.setProperty("--animation-duration", "25s");
       } else if (speed === "normal") {
-        containerRef.current.style.setProperty("--animation-duration", "40s");
+        containerRef.current.style.setProperty("--animation-duration", "50s");
       } else {
-        containerRef.current.style.setProperty("--animation-duration", "80s");
+        containerRef.current.style.setProperty("--animation-duration", "100s");
       }
     }
   };
@@ -104,14 +104,23 @@ export const InfiniteMovingCards = ({
       >
         {items.map((item, idx) => (
           <li
-            className="h-full relative overflow-hidden rounded-2xl border border-b-0 flex-shrink-0 border-slate-700"
+            className="h-full w-[280px] relative overflow-hidden rounded-2xl border border-b-0 flex-shrink-0 border-slate-700"
             style={{
               background: "linear-gradient(180deg, var(--slate-800), var(--slate-900)",
             }}
             key={item.name}
           >
             {item.img && (
-              <Image alt={item.title || "Image"} src={item.img} width={500} height={300} style={{ width: 'auto', height: 'auto' }} priority  />
+              <Image 
+                alt={item.title || "Image"} 
+                src={item.img} 
+                width={280} 
+                height={180} 
+                className="w-full h-auto"
+                quality={60}
+                loading={idx === 0 ? "eager" : "lazy"}
+                sizes="280px"
+              />
             )}
             {item.title && (
               <p className="relative w-max px-6 py-2">{item.title}</p>
