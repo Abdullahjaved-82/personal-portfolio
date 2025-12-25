@@ -60,7 +60,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to persist profile data");
+      let message = "Failed to persist profile data";
+      try {
+        const data = await response.json();
+        if (data?.error) message = String(data.error);
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
     }
 
     const data = await response.json();
@@ -71,7 +78,14 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const response = await fetch("/api/profile/reset", { method: "POST" });
 
     if (!response.ok) {
-      throw new Error("Failed to reset profile data");
+      let message = "Failed to reset profile data";
+      try {
+        const data = await response.json();
+        if (data?.error) message = String(data.error);
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
     }
 
     const data = await response.json();

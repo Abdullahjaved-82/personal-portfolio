@@ -37,7 +37,17 @@ async function writeJsonAtomic(filePath: string, payload: unknown) {
   const tmpPath = `${filePath}.tmp`;
   const data = JSON.stringify(payload, null, 2);
   await fs.writeFile(tmpPath, data, "utf8");
-  await fs.rename(tmpPath, filePath);
+  try {
+    // On Windows, rename-to-existing can throw EPERM/EEXIST.
+    await fs.rename(tmpPath, filePath);
+  } catch (err: any) {
+    if (err?.code === "EPERM" || err?.code === "EEXIST") {
+      await fs.unlink(filePath).catch(() => undefined);
+      await fs.rename(tmpPath, filePath);
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function readStoredProfile(): Promise<StoredProfileFile | null> {
