@@ -9,10 +9,8 @@ export async function GET() {
     return NextResponse.json({ profile });
   } catch (error) {
     console.error("GET /api/profile failed", error);
-    return NextResponse.json(
-      { error: "Failed to load profile" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Failed to load profile";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -27,9 +25,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ profile: merged });
   } catch (error) {
     console.error("PUT /api/profile failed", error);
-    return NextResponse.json(
-      { error: "Failed to save profile" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Failed to save profile";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

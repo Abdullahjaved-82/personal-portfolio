@@ -7,6 +7,10 @@ const PROFILE_PATH = path.join(DATA_DIR, "profile.json");
 
 const KV_KEY = "portfolio:profile";
 
+function isVercelRuntime() {
+  return Boolean(process.env.VERCEL);
+}
+
 function kvEnabled() {
   // On Vercel this is configured automatically when you add KV to the project.
   // Locally, it will be absent unless you `vercel env pull`.
@@ -51,6 +55,12 @@ async function writeJsonAtomic(filePath: string, payload: unknown) {
 }
 
 export async function readStoredProfile(): Promise<StoredProfileFile | null> {
+  if (isVercelRuntime() && !kvEnabled()) {
+    throw new Error(
+      "Vercel KV is not configured. Add KV in Vercel Storage and set the KV_* environment variables."
+    );
+  }
+
   if (kvEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");
@@ -68,6 +78,12 @@ export async function readStoredProfile(): Promise<StoredProfileFile | null> {
 export async function writeStoredProfile(profile: ProfileData): Promise<void> {
   const payload = { profile, updatedAt: new Date().toISOString() } satisfies StoredProfileFile;
 
+  if (isVercelRuntime() && !kvEnabled()) {
+    throw new Error(
+      "Vercel KV is not configured, so the admin panel cannot save profile data yet. Add KV in Vercel Storage and redeploy."
+    );
+  }
+
   if (kvEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");
@@ -82,6 +98,12 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
 }
 
 export async function resetStoredProfile(): Promise<void> {
+  if (isVercelRuntime() && !kvEnabled()) {
+    throw new Error(
+      "Vercel KV is not configured, so the admin panel cannot reset profile data yet. Add KV in Vercel Storage and redeploy."
+    );
+  }
+
   if (kvEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");

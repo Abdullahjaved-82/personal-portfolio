@@ -9,9 +9,7 @@ export async function POST() {
     return NextResponse.json({ profile });
   } catch (error) {
     console.error("POST /api/profile/reset failed", error);
-    return NextResponse.json(
-      { error: "Failed to reset profile" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Failed to reset profile";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

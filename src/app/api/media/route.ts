@@ -5,6 +5,10 @@ import { randomUUID } from "crypto";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
+function isVercelRuntime() {
+  return Boolean(process.env.VERCEL);
+}
+
 function blobEnabled() {
   // Vercel Blob requires a read/write token.
   // On Vercel, set it in Project Settings → Environment Variables.
@@ -21,6 +25,13 @@ function sanitizeFilename(name: string) {
 
 export async function GET() {
   try {
+    if (isVercelRuntime() && !blobEnabled()) {
+      return NextResponse.json(
+        { error: "Vercel Blob is not configured. Set BLOB_READ_WRITE_TOKEN in Vercel, then redeploy." },
+        { status: 500 }
+      );
+    }
+
     if (blobEnabled()) {
       const { list } = await import("@vercel/blob");
       const result = await list({ prefix: "uploads/", mode: "expanded" });
@@ -63,6 +74,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (isVercelRuntime() && !blobEnabled()) {
+      return NextResponse.json(
+        { error: "Vercel Blob is not configured. Set BLOB_READ_WRITE_TOKEN in Vercel, then redeploy." },
+        { status: 500 }
+      );
+    }
+
     if (blobEnabled()) {
       const { put } = await import("@vercel/blob");
       const form = await request.formData();
@@ -116,6 +134,13 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    if (isVercelRuntime() && !blobEnabled()) {
+      return NextResponse.json(
+        { error: "Vercel Blob is not configured. Set BLOB_READ_WRITE_TOKEN in Vercel, then redeploy." },
+        { status: 500 }
+      );
+    }
+
     if (blobEnabled()) {
       const { del } = await import("@vercel/blob");
       const { searchParams } = new URL(request.url);
@@ -150,12 +175,10 @@ export async function DELETE(request: Request) {
     }
 
     const safe = sanitizeFilename(name);
-    const full = path.join(UPLOAD_DIR, safe);
-
-    // Basic safety: ensure path stays inside upload dir.
-    if (!full.startsWith(UPLOAD_DIR)) {
+    if (safe.includes("/") || safe.includes("\\")) {
       return NextResponse.json({ error: "Invalid name" }, { status: 400 });
     }
+    const full = path.join(UPLOAD_DIR, safe);
 
     await fs.unlink(full);
     return NextResponse.json({ ok: true });
