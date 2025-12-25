@@ -2,6 +2,15 @@
 import path from "path";
 
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      // Vercel Blob public URLs (images uploaded via the admin panel)
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
+  },
   webpack: (config) => {
     // Next's resolver can sometimes pick the "require" export condition during the build,
     // but @splinetool/react-spline only provides "import" in its exports map.
