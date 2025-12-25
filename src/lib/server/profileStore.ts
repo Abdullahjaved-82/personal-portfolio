@@ -21,6 +21,24 @@ function kvRestEnabled() {
   return Boolean(process.env.KV_REST_API_URL || process.env.KV_URL);
 }
 
+function kvEnvDebug() {
+  return {
+    VERCEL: Boolean(process.env.VERCEL),
+    KV_REDIS_URL: Boolean(process.env.KV_REDIS_URL),
+    KV_REST_API_URL: Boolean(process.env.KV_REST_API_URL),
+    KV_URL: Boolean(process.env.KV_URL),
+  };
+}
+
+function kvNotConfiguredMessage(action: string) {
+  const dbg = kvEnvDebug();
+  return (
+    `Vercel KV is not configured, so the admin panel cannot ${action} yet. ` +
+    `Add KV in Vercel Storage and redeploy. ` +
+    `Detected env vars: VERCEL=${dbg.VERCEL}, KV_REDIS_URL=${dbg.KV_REDIS_URL}, KV_REST_API_URL=${dbg.KV_REST_API_URL}, KV_URL=${dbg.KV_URL}.`
+  );
+}
+
 async function getRedisClient() {
   const url = process.env.KV_REDIS_URL;
   if (!url) {
@@ -84,9 +102,7 @@ async function writeJsonAtomic(filePath: string, payload: unknown) {
 
 export async function readStoredProfile(): Promise<StoredProfileFile | null> {
   if (isVercelRuntime() && !kvEnabled()) {
-    throw new Error(
-      "Vercel KV is not configured. Add KV in Vercel Storage and set the KV_* environment variables."
-    );
+    throw new Error(kvNotConfiguredMessage("load profile data"));
   }
 
   if (kvRestEnabled()) {
@@ -118,9 +134,7 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
   const payload = { profile, updatedAt: new Date().toISOString() } satisfies StoredProfileFile;
 
   if (isVercelRuntime() && !kvEnabled()) {
-    throw new Error(
-      "Vercel KV is not configured, so the admin panel cannot save profile data yet. Add KV in Vercel Storage and redeploy."
-    );
+    throw new Error(kvNotConfiguredMessage("save profile data"));
   }
 
   if (kvRestEnabled()) {
@@ -148,9 +162,7 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
 
 export async function resetStoredProfile(): Promise<void> {
   if (isVercelRuntime() && !kvEnabled()) {
-    throw new Error(
-      "Vercel KV is not configured, so the admin panel cannot reset profile data yet. Add KV in Vercel Storage and redeploy."
-    );
+    throw new Error(kvNotConfiguredMessage("reset profile data"));
   }
 
   if (kvRestEnabled()) {
