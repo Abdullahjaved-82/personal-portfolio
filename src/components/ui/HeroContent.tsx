@@ -2,18 +2,35 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { gsap } from "gsap";
 import { useProfile } from "@/context/ProfileContext";
 
 export default function HeroContent() {
     const { profile } = useProfile();
 
     useEffect(() => {
-        const tl = gsap.timeline();
-        tl.fromTo(".hero-text-1", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out", })
-          .fromTo(".hero-text-2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" })
-          .fromTo(".hero-text-3", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" })
-          .fromTo(".hero-buttons", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" });
+        let cancelled = false;
+
+        // Import GSAP only on the client after the first paint.
+        // This keeps the initial bundle smaller and helps avoid long "stuck" boot screens.
+        const run = async () => {
+            const mod = await import("gsap");
+            if (cancelled) return;
+            const { gsap } = mod;
+
+            const tl = gsap.timeline();
+            tl.fromTo(".hero-text-1", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" })
+                .fromTo(".hero-text-2", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" })
+                .fromTo(".hero-text-3", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" })
+                .fromTo(".hero-buttons", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.3, ease: "power1.out" });
+        };
+
+        requestAnimationFrame(() => {
+            void run();
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const primaryCta = profile.heroCTA;

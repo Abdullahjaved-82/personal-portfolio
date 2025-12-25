@@ -68,6 +68,36 @@ html[data-failsafe="1"] .loading-screen .animate-shimmer {
   animation: none !important;
 }
 
+/* Boot overlay: fade out even if JS/hydration is slow.
+   IMPORTANT: only apply to the initial boot overlay (not app/loading.tsx). */
+@keyframes boot-overlay-autohide {
+  0% {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  70% {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+.boot-loading-screen {
+  animation: boot-overlay-autohide 1.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-loading-screen {
+    animation-duration: 0.6s;
+  }
+}
+
 
 body {
   color: rgb(var(--background-start-rgb));

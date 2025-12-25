@@ -1,56 +1,11 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-
-const MIN_VISIBLE_MS = 650;
-const MAX_VISIBLE_MS = 8000;
-
-function nowMs() {
-  if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
-  return Date.now();
-}
-
-const LoadingOverlay = () => {
-  const shouldStartVisible = useMemo(() => {
-    if (typeof document === "undefined") return true;
-    return document.readyState !== "complete";
-  }, []);
-
-  const [isVisible, setIsVisible] = useState(shouldStartVisible);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const startedAt = nowMs();
-    let maxTimer = null;
-
-    const hide = () => {
-      const elapsed = nowMs() - startedAt;
-      const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-      window.setTimeout(() => setIsVisible(false), remaining);
-    };
-
-    // If the page is already fully loaded by the time we mount, don’t flash the overlay.
-    if (document.readyState === "complete") {
-      hide();
-      return;
-    }
-
-    window.addEventListener("load", hide, { once: true });
-    maxTimer = window.setTimeout(hide, MAX_VISIBLE_MS);
-
-    return () => {
-      window.removeEventListener("load", hide);
-      if (maxTimer) window.clearTimeout(maxTimer);
-    };
-  }, [isVisible]);
-
+export default function LoadingOverlay() {
+  // CSS-driven boot overlay:
+  // - Renders in server HTML instantly.
+  // - Auto-hides after a short delay even if JS/hydration is slow or fails.
+  // This prevents the "stuck loading screen" feeling on slow networks/dev cold starts.
   return (
     <div
-      className={
-        "loading-screen fixed inset-0 z-[9999] flex items-center justify-center bg-black transition-opacity duration-300 ease-out " +
-        (isVisible ? "opacity-100" : "pointer-events-none opacity-0")
-      }
+      className="loading-screen boot-loading-screen fixed inset-0 z-[9999] flex items-center justify-center bg-black"
       role="status"
       aria-live="polite"
       aria-label="Loading"
@@ -97,6 +52,4 @@ const LoadingOverlay = () => {
       </div>
     </div>
   );
-};
-
-export default LoadingOverlay;
+}
