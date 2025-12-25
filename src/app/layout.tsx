@@ -9,7 +9,12 @@ import RafHubController from "@/components/RafHubController";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Abdullah Javed | Software Engineer & ML Enthusiast",
   description: "Dedicated software engineer passionate about solving real-world problems using modern technologies. Aspiring Machine Learning Engineer focused on building intelligent systems and AI-driven solutions.",
   keywords: [
@@ -25,7 +30,7 @@ export const metadata: Metadata = {
     title: "Abdullah Javed | Software Engineer & ML Enthusiast",
     description:
       "Software engineer crafting intelligent web experiences and machine learning prototypes.",
-    url: "https://abdullah.dev",
+    url: siteUrl,
     type: "website",
     locale: "en_US",
     images: [
