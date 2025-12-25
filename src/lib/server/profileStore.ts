@@ -14,7 +14,32 @@ function isVercelRuntime() {
 function kvEnabled() {
   // On Vercel this is configured automatically when you add KV to the project.
   // Locally, it will be absent unless you `vercel env pull`.
+  return Boolean(process.env.KV_REST_API_URL || process.env.KV_URL || process.env.KV_REDIS_URL);
+}
+
+function kvRestEnabled() {
   return Boolean(process.env.KV_REST_API_URL || process.env.KV_URL);
+}
+
+async function getRedisClient() {
+  const url = process.env.KV_REDIS_URL;
+  if (!url) {
+    throw new Error("KV_REDIS_URL is missing");
+  }
+
+  const globalAny = globalThis as any;
+  if (globalAny.__portfolioRedisClient) {
+    return globalAny.__portfolioRedisClient as ReturnType<(typeof import("redis"))['createClient']>;
+  }
+
+  const { createClient } = await import("redis");
+  const client = createClient({ url });
+  client.on("error", (err) => {
+    console.error("Redis client error", err);
+  });
+  await client.connect();
+  globalAny.__portfolioRedisClient = client;
+  return client;
 }
 
 export type StoredProfileFile = {
@@ -61,7 +86,7 @@ export async function readStoredProfile(): Promise<StoredProfileFile | null> {
     );
   }
 
-  if (kvEnabled()) {
+  if (kvRestEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");
       const stored = await kv.get<StoredProfileFile>(KV_KEY);
@@ -69,6 +94,15 @@ export async function readStoredProfile(): Promise<StoredProfileFile | null> {
     } catch (err) {
       // Fall back to filesystem if KV isn't reachable in local dev.
       console.warn("KV read failed, falling back to file store", err);
+    }
+  } else if (process.env.KV_REDIS_URL) {
+    try {
+      const client = await getRedisClient();
+      const raw = await client.get(KV_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw) as StoredProfileFile;
+    } catch (err) {
+      console.warn("Redis KV read failed, falling back to file store", err);
     }
   }
 
@@ -84,13 +118,21 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
     );
   }
 
-  if (kvEnabled()) {
+  if (kvRestEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");
       await kv.set(KV_KEY, payload);
       return;
     } catch (err) {
       console.warn("KV write failed, falling back to file store", err);
+    }
+  } else if (process.env.KV_REDIS_URL) {
+    try {
+      const client = await getRedisClient();
+      await client.set(KV_KEY, JSON.stringify(payload));
+      return;
+    } catch (err) {
+      console.warn("Redis KV write failed, falling back to file store", err);
     }
   }
 
@@ -104,13 +146,21 @@ export async function resetStoredProfile(): Promise<void> {
     );
   }
 
-  if (kvEnabled()) {
+  if (kvRestEnabled()) {
     try {
       const { kv } = await import("@vercel/kv");
       await kv.del(KV_KEY);
       return;
     } catch (err) {
       console.warn("KV delete failed, falling back to file store", err);
+    }
+  } else if (process.env.KV_REDIS_URL) {
+    try {
+      const client = await getRedisClient();
+      await client.del(KV_KEY);
+      return;
+    } catch (err) {
+      console.warn("Redis KV delete failed, falling back to file store", err);
     }
   }
 
