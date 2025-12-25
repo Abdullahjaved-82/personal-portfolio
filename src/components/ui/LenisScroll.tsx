@@ -1,26 +1,48 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
+import { usePerfFlags } from '@/lib/perfFlags';
+import { useRafTask } from '@/lib/useRafTask';
 
 const LenisScroll: React.FC = () => {
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 0.5, // Adjust this value to change the scroll speed (default is 1.2)
-      easing: (t) => t ** 0.5, // Customize the easing function if needed
-    });
+  const { lowEnd, reducedMotion, saveData, failsafe } = usePerfFlags();
+  const lenisRef = useRef<Lenis | null>(null);
 
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
+  // Keep scroll smooth on high-end: don't toggle Lenis off due to transient underLoad.
+  // Still respect low-end, reduced motion, data-saver, and the FPS failsafe.
+  const enabled = !(lowEnd || reducedMotion || saveData || failsafe);
+
+  useEffect(() => {
+    if (!enabled) {
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
+      return;
     }
 
-    requestAnimationFrame(raf);
-
+    lenisRef.current = new Lenis({
+      duration: 0.5,
+      easing: (t) => t ** 0.5,
+    });
     return () => {
-      lenis.destroy();
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
     };
-  }, []);
+  }, [enabled]);
+
+  // Drive Lenis from the shared RAF hub.
+  useRafTask({
+    id: 'scroll:lenis',
+    maxFps: 60,
+    enabled: () => enabled,
+    cb: (time: number) => {
+      lenisRef.current?.raf(time);
+    },
+  });
 
   return null;
 };

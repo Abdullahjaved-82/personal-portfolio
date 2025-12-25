@@ -9,8 +9,8 @@ import clsx from 'clsx';
 const menu = {
     open: {
         width: "88vw",
-        height: "75vh",
-        transform: "translate(12vw, 12vh)",
+        height: "75svh",
+        transform: "translate(12vw, 12svh)",
         transition: { duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1] },
     },
     closed: {

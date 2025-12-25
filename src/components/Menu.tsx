@@ -1,11 +1,21 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import clsx from "clsx";
-import Header from "./CanvasMenu";
+import dynamic from "next/dynamic";
 import { useProfile } from "@/context/ProfileContext";
+import { usePerfFlags } from "@/lib/perfFlags";
+
+const Header = dynamic(() => import("./CanvasMenu"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-10 w-10 rounded-full border border-white/15" aria-hidden="true" />
+  ),
+});
 
 const Menu = () => {
   const { profile } = useProfile();
+  const { lowEnd, underLoad, reducedMotion, saveData } = usePerfFlags();
+  const perfLow = lowEnd || underLoad || reducedMotion || saveData;
   const [isHidden, setIsHidden] = useState(false);
   const [isElevated, setIsElevated] = useState(false);
   const lastScrollY = useRef(0);
@@ -42,7 +52,8 @@ const Menu = () => {
     >
       <div
         className={clsx(
-          "pointer-events-auto mx-auto flex h-16 items-center justify-between gap-6 rounded-full border px-6 backdrop-blur-xl transition-all duration-300 lg:mt-4 mt-2",
+          "pointer-events-auto mx-auto flex h-16 items-center justify-between gap-6 rounded-full border px-6 transition-all duration-300 lg:mt-4 mt-2",
+          !perfLow && "backdrop-blur-xl",
           isElevated
             ? "border-white/20 bg-black/70 shadow-2xl shadow-black/40"
             : "border-white/10 bg-black/60"

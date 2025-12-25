@@ -1,12 +1,9 @@
 "use client";
-import { useRef, useEffect, useMemo } from "react";
-import { gsap } from "gsap";
+import { useMemo } from "react";
 import { useProfile } from "@/context/ProfileContext";
 import Link from "next/link";
 
 export function Footer() {
-    const listItemsRef = useRef<(HTMLLIElement | null)[]>([]);
-    const spanItemsRef = useRef<(HTMLSpanElement | null)[]>([]);
     const { profile } = useProfile();
 
     const navLinks = useMemo(
@@ -21,79 +18,6 @@ export function Footer() {
         []
     );
 
-    useEffect(() => {
-        const handleMouseEnter = (item: HTMLElement) => {
-            const textInitial = item.querySelector('.initial');
-            const textHover = item.querySelector('.hover');
-            gsap.to(textInitial, {
-                yPercent: -100,
-                perspective: 1000,
-                rotationX: 90,
-                duration: 1,
-                ease: 'power4.out',
-            });
-            gsap.to(textHover, {
-                yPercent: 0,
-                perspective: 1000,
-                rotationX: 0,
-                duration: 1,
-                ease: 'power4.out',
-            });
-        };
-
-        const handleMouseLeave = (item: HTMLElement) => {
-            const textInitial = item.querySelector('.initial');
-            const textHover = item.querySelector('.hover');
-            gsap.to(textInitial, {
-                yPercent: 0,
-                perspective: 1000,
-                rotationX: 0,
-                duration: 1,
-                ease: 'power4.out',
-            });
-            gsap.to(textHover, {
-                yPercent: 100,
-                perspective: 1000,
-                rotationX: -90,
-                duration: 1,
-                ease: 'power4.out',
-            });
-        };
-
-        const addEventListeners = (item: HTMLElement | null) => {
-            if (!item) return;
-            const textHover = item.querySelector('.hover');
-            gsap.set(textHover, { yPercent: 100, perspective: 1000, rotationX: -90 });
-
-            const enterHandler = () => handleMouseEnter(item);
-            const leaveHandler = () => handleMouseLeave(item);
-
-            item.addEventListener('mouseenter', enterHandler);
-            item.addEventListener('mouseleave', leaveHandler);
-
-            // Store handlers to remove them later
-            (item as any).__enterHandler = enterHandler;
-            (item as any).__leaveHandler = leaveHandler;
-        };
-
-        const removeEventListeners = (item: HTMLElement | null) => {
-            if (!item) return;
-            item.removeEventListener('mouseenter', (item as any).__enterHandler);
-            item.removeEventListener('mouseleave', (item as any).__leaveHandler);
-        };
-
-        const navItems = [...listItemsRef.current];
-        const contactItems = [...spanItemsRef.current];
-
-        navItems.forEach(addEventListeners);
-        contactItems.forEach(addEventListeners);
-
-        return () => {
-            navItems.forEach(removeEventListeners);
-            contactItems.forEach(removeEventListeners);
-        };
-    }, []);
-
     return (
         <footer className="relative flex flex-col bg-black py-20">
             <div className="container mx-auto flex flex-col gap-12 px-6 lg:px-12">
@@ -102,13 +26,18 @@ export function Footer() {
                         {navLinks.map((link, index) => (
                             <li
                                 key={link.label}
-                                ref={(el) => { listItemsRef.current[index] = el; }}
-                                className="relative overflow-hidden h-5 cursor-pointer"
+                                className="group relative h-5 cursor-pointer overflow-hidden"
                             >
-                                <Link href={link.href} className="block initial absolute top-0 left-0 w-full h-full">
+                                <Link
+                                    href={link.href}
+                                    className="absolute left-0 top-0 block h-full w-full transition-transform duration-500 ease-out group-hover:-translate-y-full"
+                                >
                                     {link.label}
                                 </Link>
-                                <Link href={link.href} className="block hover absolute top-0 left-0 w-full h-full">
+                                <Link
+                                    href={link.href}
+                                    className="absolute left-0 top-0 block h-full w-full translate-y-full transition-transform duration-500 ease-out group-hover:translate-y-0"
+                                >
                                     {link.label}
                                 </Link>
                             </li>
@@ -137,16 +66,13 @@ export function Footer() {
                                 return (
                                     <span
                                         key={idx}
-                                        ref={(el) => {
-                                            spanItemsRef.current[idx] = el;
-                                        }}
-                                        className='relative overflow-hidden group/line cursor-pointer'
+                                        className='group relative overflow-hidden cursor-pointer'
                                     >
                                         <a
                                             href={hrefValue}
                                             target={hrefValue.startsWith('http') ? '_blank' : undefined}
                                             rel={hrefValue.startsWith('http') ? 'noreferrer' : undefined}
-                                            className='leading-none pb-2 initial block'
+                                            className='block pb-2 leading-none transition-transform duration-500 ease-out group-hover:-translate-y-full'
                                         >
                                             {displayValue}
                                         </a>
@@ -154,11 +80,11 @@ export function Footer() {
                                             href={hrefValue}
                                             target={hrefValue.startsWith('http') ? '_blank' : undefined}
                                             rel={hrefValue.startsWith('http') ? 'noreferrer' : undefined}
-                                            className='leading-none pb-2 hover block'
+                                            className='block pb-2 leading-none translate-y-full transition-transform duration-500 ease-out group-hover:translate-y-0'
                                         >
                                             {displayValue}
                                         </a>
-                                        <span className='block bg-white h-[1px] -translate-x-full group-hover/line:translate-x-0 group-hover/line:opacity-100 opacity-0 duration-500' />
+                                        <span className='block bg-white h-[1px] -translate-x-full opacity-0 duration-500 group-hover:translate-x-0 group-hover:opacity-100' />
                                     </span>
                                 );
                             })}

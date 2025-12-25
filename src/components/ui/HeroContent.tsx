@@ -20,8 +20,7 @@ export default function HeroContent() {
     const secondaryCta = profile.heroSecondaryCTA;
 
     return (
-        <div className="w-full min-h-screen flex flex-col items-center justify-center px-6 pt-24 pb-16">
-            <div className="absolute h-full pointer-events-none inset-0 flex items-center justify-center bg-slate-950 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+        <div className="w-full min-h-screen-safe flex flex-col items-center justify-center px-6 pt-24 pb-16">
             <p className="hero-text-1 text-center text-4xl md:text-5xl lg:text-7xl font-bold relative z-20 text-white max-w-4xl leading-tight">
                 {profile.name}
             </p>

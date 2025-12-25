@@ -7,7 +7,7 @@ import Contact from "@/components/Contact";
 
 export default function Home() {
   return (
-    <main className='flex relative min-h-screen flex-col items-center justify-between overflow-x-hidden'>
+    <main className='flex relative min-h-screen-safe flex-col items-center justify-between overflow-x-hidden'>
       <LenisScroll />
       <Hero />
       <About />

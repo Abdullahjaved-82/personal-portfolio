@@ -1,6 +1,9 @@
 "use client";
 import { cn } from "@/utils/cn";
 import { useEffect, useRef, useState } from "react";
+import { usePerfFlags } from "@/lib/perfFlags";
+import { useInView } from "@/lib/useInView";
+import { useRafTask } from "@/lib/useRafTask";
 
 export const BackgroundGradientAnimation = ({
   gradientBackgroundStart = "rgb(108, 0, 162)",
@@ -34,11 +37,19 @@ export const BackgroundGradientAnimation = ({
   containerClassName?: string;
 }) => {
   const interactiveRef = useRef<HTMLDivElement>(null);
+  const { lowEnd, underLoad, reducedMotion, saveData } = usePerfFlags();
+  const perfLow = lowEnd || underLoad || reducedMotion || saveData;
+  const allowHeavyFilter = !perfLow;
+  const effectiveInteractive = interactive && allowHeavyFilter;
+  const effectiveBlendingValue = perfLow ? "normal" : blendingValue;
 
-  const [curX, setCurX] = useState(0);
-  const [curY, setCurY] = useState(0);
-  const [tgX, setTgX] = useState(0);
-  const [tgY, setTgY] = useState(0);
+  const curXRef = useRef(0);
+  const curYRef = useRef(0);
+  const tgXRef = useRef(0);
+  const tgYRef = useRef(0);
+
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(hostRef, { threshold: 0.1 });
   useEffect(() => {
     document.body.style.setProperty(
       "--gradient-background-start",
@@ -55,30 +66,49 @@ export const BackgroundGradientAnimation = ({
     document.body.style.setProperty("--fifth-color", fifthColor);
     document.body.style.setProperty("--pointer-color", pointerColor);
     document.body.style.setProperty("--size", size);
-    document.body.style.setProperty("--blending-value", blendingValue);
-  }, []);
+    document.body.style.setProperty("--blending-value", effectiveBlendingValue);
+  }, [
+    effectiveBlendingValue,
+    fifthColor,
+    firstColor,
+    fourthColor,
+    gradientBackgroundEnd,
+    gradientBackgroundStart,
+    pointerColor,
+    secondColor,
+    size,
+    thirdColor,
+  ]);
+  const maxFps = perfLow ? 30 : 60;
 
-  useEffect(() => {
-    function move() {
-      if (!interactiveRef.current) {
-        return;
-      }
-      // Reduced smoothing factor for better performance (30 instead of 20)
-      setCurX(curX + (tgX - curX) / 30);
-      setCurY(curY + (tgY - curY) / 30);
-      interactiveRef.current.style.transform = `translate(${Math.round(
-        curX
-      )}px, ${Math.round(curY)}px)`;
-    }
+  useRafTask({
+    id: "bg:gradient-pointer",
+    maxFps,
+    enabled: () => effectiveInteractive && inView,
+    cb: () => {
+      const el = interactiveRef.current;
+      if (!el) return;
 
-    move();
-  }, [tgX, tgY]);
+      const smoothing = 30;
+      const cx = curXRef.current;
+      const cy = curYRef.current;
+      const tx = tgXRef.current;
+      const ty = tgYRef.current;
+
+      const nx = cx + (tx - cx) / smoothing;
+      const ny = cy + (ty - cy) / smoothing;
+
+      curXRef.current = nx;
+      curYRef.current = ny;
+      el.style.transform = `translate(${Math.round(nx)}px, ${Math.round(ny)}px)`;
+    },
+  });
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (interactiveRef.current) {
       const rect = interactiveRef.current.getBoundingClientRect();
-      setTgX(event.clientX - rect.left);
-      setTgY(event.clientY - rect.top);
+      tgXRef.current = event.clientX - rect.left;
+      tgYRef.current = event.clientY - rect.top;
     }
   };
 
@@ -93,6 +123,7 @@ export const BackgroundGradientAnimation = ({
         "w-full h-full absolute overflow-hidden top-0 left-0 bg-[linear-gradient(40deg,var(--gradient-background-start),var(--gradient-background-end))]",
         containerClassName
       )}
+      ref={hostRef}
     >
       <svg className="hidden">
         <defs>
@@ -115,8 +146,13 @@ export const BackgroundGradientAnimation = ({
       <div className={cn("", className)}>{children}</div>
       <div
         className={cn(
-          "gradients-container h-full w-full blur-md", // Reduced blur from blur-lg
-          isSafari ? "blur-xl" : "[filter:url(#blurMe)_blur(30px)]" // Reduced from blur-2xl and blur(40px)
+          "gradients-container h-full w-full",
+          allowHeavyFilter ? "blur-md" : "blur-none",
+          allowHeavyFilter
+            ? isSafari
+              ? "blur-xl"
+              : "[filter:url(#blurMe)_blur(30px)]"
+            : ""
         )}
       >
         <div
@@ -124,7 +160,7 @@ export const BackgroundGradientAnimation = ({
             `absolute [background:radial-gradient(circle_at_center,_var(--first-color)_0,_var(--first-color)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
             `[transform-origin:center_center]`,
-            `animate-first`,
+            !perfLow && `animate-first`,
             `opacity-100`
           )}
         ></div>
@@ -133,7 +169,7 @@ export const BackgroundGradientAnimation = ({
             `absolute [background:radial-gradient(circle_at_center,_rgba(var(--second-color),_0.8)_0,_rgba(var(--second-color),_0)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
             `[transform-origin:calc(50%-400px)]`,
-            `animate-second`,
+            !perfLow && `animate-second`,
             `opacity-100`
           )}
         ></div>
@@ -142,7 +178,7 @@ export const BackgroundGradientAnimation = ({
             `absolute [background:radial-gradient(circle_at_center,_rgba(var(--third-color),_0.8)_0,_rgba(var(--third-color),_0)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
             `[transform-origin:calc(50%+400px)]`,
-            `animate-third`,
+            !perfLow && `animate-third`,
             `opacity-100`
           )}
         ></div>
@@ -151,7 +187,7 @@ export const BackgroundGradientAnimation = ({
             `absolute [background:radial-gradient(circle_at_center,_rgba(var(--fourth-color),_0.8)_0,_rgba(var(--fourth-color),_0)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
             `[transform-origin:calc(50%-200px)]`,
-            `animate-fourth`,
+            !perfLow && `animate-fourth`,
             `opacity-70`
           )}
         ></div>
@@ -160,12 +196,12 @@ export const BackgroundGradientAnimation = ({
             `absolute [background:radial-gradient(circle_at_center,_rgba(var(--fifth-color),_0.8)_0,_rgba(var(--fifth-color),_0)_50%)_no-repeat]`,
             `[mix-blend-mode:var(--blending-value)] w-[var(--size)] h-[var(--size)] top-[calc(50%-var(--size)/2)] left-[calc(50%-var(--size)/2)]`,
             `[transform-origin:calc(50%-800px)_calc(50%+800px)]`,
-            `animate-fifth`,
+            !perfLow && `animate-fifth`,
             `opacity-100`
           )}
         ></div>
 
-        {interactive && (
+        {effectiveInteractive && (
           <div
             ref={interactiveRef}
             onMouseMove={handleMouseMove}

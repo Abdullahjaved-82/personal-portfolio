@@ -1,8 +1,9 @@
 "use client";
 
 import { cn } from "@/utils/cn";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { usePerfFlags } from "@/lib/perfFlags";
 
 export const InfiniteMovingCards = ({
   items,
@@ -23,30 +24,10 @@ export const InfiniteMovingCards = ({
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLUListElement>(null);
+  const { lowEnd, underLoad, reducedMotion, saveData } = usePerfFlags();
+  const disableInfinite = lowEnd || underLoad || reducedMotion || saveData;
 
-  useEffect(() => {
-    addAnimation();
-  }, []);
-  const [start, setStart] = useState(false);
-
-  function addAnimation() {
-    if (containerRef.current && scrollerRef.current) {
-      const scrollerContent = Array.from(scrollerRef.current.children);
-
-      scrollerContent.forEach((item) => {
-        const duplicatedItem = item.cloneNode(true);
-        if (scrollerRef.current) {
-          scrollerRef.current.appendChild(duplicatedItem);
-        }
-      });
-
-      getDirection();
-      getSpeed();
-      setStart(true);
-    }
-  }
-
-  const getDirection = () => {
+  const getDirection = useCallback(() => {
     if (containerRef.current) {
       switch (direction) {
         case "left":
@@ -67,19 +48,79 @@ export const InfiniteMovingCards = ({
           break;
       }
     }
-  };
+  }, [direction]);
 
-  const getSpeed = () => {
+  const getSpeed = useCallback(() => {
     if (containerRef.current) {
       if (speed === "fast") {
-        containerRef.current.style.setProperty("--animation-duration", "25s");
+        containerRef.current.style.setProperty(
+          "--animation-duration",
+          lowEnd ? "60s" : "25s"
+        );
       } else if (speed === "normal") {
-        containerRef.current.style.setProperty("--animation-duration", "50s");
+        containerRef.current.style.setProperty(
+          "--animation-duration",
+          lowEnd ? "90s" : "50s"
+        );
       } else {
-        containerRef.current.style.setProperty("--animation-duration", "100s");
+        containerRef.current.style.setProperty(
+          "--animation-duration",
+          lowEnd ? "140s" : "100s"
+        );
       }
     }
-  };
+  }, [lowEnd, speed]);
+
+  const addAnimation = useCallback(() => {
+    if (disableInfinite) {
+      setStart(false);
+      return;
+    }
+    if (containerRef.current && scrollerRef.current) {
+      // Avoid duplicating nodes multiple times (e.g. React StrictMode in dev)
+      // which explodes DOM size and causes mobile memory spikes.
+      if (scrollerRef.current.dataset.duplicated === "true") {
+        setStart(true);
+        return;
+      }
+
+      const scrollerContent = Array.from(scrollerRef.current.children);
+
+      scrollerContent.forEach((item) => {
+        const duplicatedItem = item.cloneNode(true);
+        if (scrollerRef.current) {
+          scrollerRef.current.appendChild(duplicatedItem);
+        }
+      });
+
+      scrollerRef.current.dataset.duplicated = "true";
+
+      getDirection();
+      getSpeed();
+      setStart(true);
+    }
+  }, [disableInfinite, getDirection, getSpeed]);
+
+  useEffect(() => {
+    addAnimation();
+    // Pause animations entirely when backgrounded.
+    const onVisibilityChange = () => {
+      setStart(!document.hidden);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [addAnimation]);
+  const [start, setStart] = useState(false);
+
+  useEffect(() => {
+    // Re-apply duration if the perf tier resolves after mount.
+    getSpeed();
+  }, [getSpeed]);
+
+  useEffect(() => {
+    // If we enter a low-power or under-load state, stop the infinite animation.
+    if (disableInfinite) setStart(false);
+  }, [disableInfinite]);
 
   return (
     <div

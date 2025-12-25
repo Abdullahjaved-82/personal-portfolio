@@ -5,6 +5,7 @@ import Menu from "@/components/Menu";
 import Footer from "@/components/Footer";
 import { ProfileProvider } from "@/context/ProfileContext";
 import LoadingOverlay from "@/components/LoadingOverlay";
+import RafHubController from "@/components/RafHubController";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -57,6 +58,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} overflow-x-hidden relative`}>
         <ProfileProvider>
+          <RafHubController />
           <LoadingOverlay />
           <Menu />
           {children}

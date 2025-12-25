@@ -1,56 +1,7 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-
-const MIN_VISIBLE_MS = 650;
-const MAX_VISIBLE_MS = 8000;
-
-function nowMs() {
-  if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
-  return Date.now();
-}
-
-const LoadingOverlay = () => {
-  const shouldStartVisible = useMemo(() => {
-    if (typeof document === "undefined") return true;
-    return document.readyState !== "complete";
-  }, []);
-
-  const [isVisible, setIsVisible] = useState(shouldStartVisible);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const startedAt = nowMs();
-    let maxTimer = null;
-
-    const hide = () => {
-      const elapsed = nowMs() - startedAt;
-      const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed);
-      window.setTimeout(() => setIsVisible(false), remaining);
-    };
-
-    // If the page is already fully loaded by the time we mount, don’t flash the overlay.
-    if (document.readyState === "complete") {
-      hide();
-      return;
-    }
-
-    window.addEventListener("load", hide, { once: true });
-    maxTimer = window.setTimeout(hide, MAX_VISIBLE_MS);
-
-    return () => {
-      window.removeEventListener("load", hide);
-      if (maxTimer) window.clearTimeout(maxTimer);
-    };
-  }, [isVisible]);
-
+export default function Loading() {
   return (
     <div
-      className={
-        "loading-screen fixed inset-0 z-[9999] flex items-center justify-center bg-black transition-opacity duration-300 ease-out " +
-        (isVisible ? "opacity-100" : "pointer-events-none opacity-0")
-      }
+      className="loading-screen fixed inset-0 z-[9999] flex items-center justify-center bg-black"
       role="status"
       aria-live="polite"
       aria-label="Loading"
@@ -62,7 +13,6 @@ const LoadingOverlay = () => {
       />
 
       <div className="relative flex flex-col items-center gap-6 px-6 text-center text-white">
-        {/* Orb/ring */}
         <div className="relative h-14 w-14">
           <div className="absolute inset-0 rounded-full border border-white/15" />
           <div
@@ -83,7 +33,6 @@ const LoadingOverlay = () => {
           <div className="text-xs uppercase tracking-[0.55em] text-white/60">Loading portfolio</div>
         </div>
 
-        {/* Shimmer bar (transform/background-position only) */}
         <div className="h-[2px] w-56 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full w-full motion-reduce:animate-none animate-shimmer"
@@ -97,6 +46,4 @@ const LoadingOverlay = () => {
       </div>
     </div>
   );
-};
-
-export default LoadingOverlay;
+}

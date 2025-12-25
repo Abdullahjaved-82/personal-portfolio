@@ -63,7 +63,7 @@ export default function NavigationMenu() {
 					))}
 				</motion.div>
 			</div>
-			<div className="relative block h-[40vh] w-full overflow-hidden rounded-3xl">
+			<div className="relative block h-[40svh] w-full overflow-hidden rounded-3xl">
 				<Image
 					alt={`${profile.name} creative background`}
 					src={profile.heroMedia || "/works/works01.jpg"}

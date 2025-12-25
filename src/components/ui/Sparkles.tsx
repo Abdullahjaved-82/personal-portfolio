@@ -6,6 +6,7 @@ import type { Container, SingleOrMultiple } from "@tsparticles/engine";
 import { loadSlim } from "@tsparticles/slim";
 import { cn } from "@/utils/cn";
 import { motion, useAnimation } from "framer-motion";
+import { usePerfFlags } from "@/lib/perfFlags";
 
 type ParticlesProps = {
   id?: string;
@@ -30,18 +31,37 @@ export const SparklesCore = (props: ParticlesProps) => {
     particleDensity,
   } = props;
   const [init, setInit] = useState(false);
+  const { lowEnd, underLoad, failsafe } = usePerfFlags();
+
+  const perfLow = lowEnd || underLoad;
+  const disabled = Boolean(failsafe);
+
+  const effectiveDensity = perfLow
+    ? Math.min(particleDensity || 120, 40)
+    : particleDensity || 120;
+
+  const fpsLimit = perfLow ? 30 : 60;
+
   useEffect(() => {
+    if (disabled) {
+      setInit(false);
+      return;
+    }
+
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     }).then(() => {
       setInit(true);
     });
-  }, []);
+  }, [disabled]);
+
+  useEffect(() => {
+    if (disabled) setInit(false);
+  }, [disabled]);
   const controls = useAnimation();
 
   const particlesLoaded = async (container?: Container) => {
     if (container) {
-      console.log(container);
       controls.start({
         opacity: 1,
         transition: {
@@ -53,7 +73,7 @@ export const SparklesCore = (props: ParticlesProps) => {
 
   return (
     <motion.div animate={controls} className={cn("opacity-0", className)}>
-      {init && (
+      {!disabled && init && (
         <Particles
           id={id || "tsparticles"}
           className={cn("h-full w-full")}
@@ -69,11 +89,13 @@ export const SparklesCore = (props: ParticlesProps) => {
               zIndex: 1,
             },
 
-            fpsLimit: 120,
+            fpsLimit,
+            pauseOnBlur: true,
+            pauseOnOutsideViewport: true,
             interactivity: {
               events: {
                 onClick: {
-                  enable: true,
+                  enable: !perfLow,
                   mode: "push",
                 },
                 onHover: {
@@ -85,7 +107,7 @@ export const SparklesCore = (props: ParticlesProps) => {
               },
               modes: {
                 push: {
-                  quantity: 4,
+                  quantity: perfLow ? 1 : 4,
                 },
                 repulse: {
                   distance: 200,
@@ -231,7 +253,7 @@ export const SparklesCore = (props: ParticlesProps) => {
                   mode: "delete",
                   value: 0,
                 },
-                value: particleDensity || 120,
+                value: effectiveDensity,
               },
               opacity: {
                 value: {
@@ -426,7 +448,7 @@ export const SparklesCore = (props: ParticlesProps) => {
                 speed: 1,
               },
             },
-            detectRetina: true,
+            detectRetina: !perfLow,
           }}
         />
       )}

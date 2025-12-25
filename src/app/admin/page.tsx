@@ -158,7 +158,7 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+      <main className="min-h-screen-safe bg-black text-white flex items-center justify-center px-6">
         <form
           onSubmit={handleLogin}
           className="w-full max-w-md space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur"
@@ -207,7 +207,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black pb-24 text-white">
+    <main className="min-h-screen-safe bg-black pb-24 text-white">
       <div className="container mx-auto px-6 pt-28 lg:px-12">
         <header className="flex flex-col gap-4 border-b border-white/10 pb-10">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
