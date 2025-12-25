@@ -53,19 +53,29 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
   const overwriteProfile = useCallback(async (nextProfile: ProfileData) => {
     const payload = mergeProfile(nextProfile);
-    const response = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile: payload }),
-    });
+    let response: Response;
+    try {
+      response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: payload }),
+      });
+    } catch (error: any) {
+      throw new Error(error?.message ? `Network error: ${error.message}` : "Network error while saving profile");
+    }
 
     if (!response.ok) {
-      let message = "Failed to persist profile data";
+      let message = `Failed to persist profile data (${response.status} ${response.statusText})`;
       try {
         const data = await response.json();
         if (data?.error) message = String(data.error);
       } catch {
-        // ignore
+        try {
+          const text = await response.text();
+          if (text) message = `${message}: ${text.slice(0, 200)}`;
+        } catch {
+          // ignore
+        }
       }
       throw new Error(message);
     }
@@ -75,15 +85,25 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetProfile = useCallback(async () => {
-    const response = await fetch("/api/profile/reset", { method: "POST" });
+    let response: Response;
+    try {
+      response = await fetch("/api/profile/reset", { method: "POST" });
+    } catch (error: any) {
+      throw new Error(error?.message ? `Network error: ${error.message}` : "Network error while resetting profile");
+    }
 
     if (!response.ok) {
-      let message = "Failed to reset profile data";
+      let message = `Failed to reset profile data (${response.status} ${response.statusText})`;
       try {
         const data = await response.json();
         if (data?.error) message = String(data.error);
       } catch {
-        // ignore
+        try {
+          const text = await response.text();
+          if (text) message = `${message}: ${text.slice(0, 200)}`;
+        } catch {
+          // ignore
+        }
       }
       throw new Error(message);
     }

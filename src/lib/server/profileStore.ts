@@ -33,7 +33,10 @@ async function getRedisClient() {
   }
 
   const { createClient } = await import("redis");
-  const client = createClient({ url });
+  const client = createClient({
+    url,
+    ...(url.startsWith("rediss://") ? { socket: { tls: true } } : {}),
+  });
   client.on("error", (err) => {
     console.error("Redis client error", err);
   });
@@ -92,6 +95,7 @@ export async function readStoredProfile(): Promise<StoredProfileFile | null> {
       const stored = await kv.get<StoredProfileFile>(KV_KEY);
       return stored ?? null;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       // Fall back to filesystem if KV isn't reachable in local dev.
       console.warn("KV read failed, falling back to file store", err);
     }
@@ -102,6 +106,7 @@ export async function readStoredProfile(): Promise<StoredProfileFile | null> {
       if (!raw) return null;
       return JSON.parse(raw) as StoredProfileFile;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       console.warn("Redis KV read failed, falling back to file store", err);
     }
   }
@@ -124,6 +129,7 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
       await kv.set(KV_KEY, payload);
       return;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       console.warn("KV write failed, falling back to file store", err);
     }
   } else if (process.env.KV_REDIS_URL) {
@@ -132,6 +138,7 @@ export async function writeStoredProfile(profile: ProfileData): Promise<void> {
       await client.set(KV_KEY, JSON.stringify(payload));
       return;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       console.warn("Redis KV write failed, falling back to file store", err);
     }
   }
@@ -152,6 +159,7 @@ export async function resetStoredProfile(): Promise<void> {
       await kv.del(KV_KEY);
       return;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       console.warn("KV delete failed, falling back to file store", err);
     }
   } else if (process.env.KV_REDIS_URL) {
@@ -160,6 +168,7 @@ export async function resetStoredProfile(): Promise<void> {
       await client.del(KV_KEY);
       return;
     } catch (err) {
+      if (isVercelRuntime()) throw err;
       console.warn("Redis KV delete failed, falling back to file store", err);
     }
   }
