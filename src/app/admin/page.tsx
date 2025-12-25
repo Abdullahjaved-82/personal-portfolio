@@ -22,6 +22,13 @@ export default function AdminPage() {
   const [formData, setFormData] = useState<ProfileData>(() => cloneProfile(profile));
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [mediaFiles, setMediaFiles] = useState<Array<{ name: string; url: string; size: number; modifiedAt: string }>>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!statusMessage || typeof window === "undefined") return;
@@ -42,6 +49,27 @@ export default function AdminPage() {
       setFormData(cloneProfile(profile));
     }
   }, [profile, isAuthenticated]);
+
+  const loadMedia = async () => {
+    setMediaLoading(true);
+    setMediaError(null);
+    try {
+      const res = await fetch("/api/media", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Failed to load media");
+      setMediaFiles(Array.isArray(data.files) ? data.files : []);
+    } catch (err: any) {
+      setMediaError(err?.message ?? "Failed to load media");
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    loadMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const handleLogin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -132,17 +160,77 @@ export default function AdminPage() {
     });
   };
 
-  const handleSave = () => {
-    overwriteProfile(formData);
-    setStatusMessage("Profile saved. Changes are now reflected on the site.");
+  const addStat = () => {
+    updateProfileDraft((draft) => {
+      draft.stats.push({ label: "New stat", value: "" });
+    });
   };
 
-  const handleReset = () => {
+  const removeStat = (index: number) => {
+    updateProfileDraft((draft) => {
+      draft.stats.splice(index, 1);
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await overwriteProfile(formData);
+      setStatusMessage("Profile saved. Changes are now reflected on the site.");
+    } catch (err: any) {
+      setStatusMessage(err?.message ?? "Failed to save profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
     const confirmReset = window.confirm("Reset to default Abdullah Javed profile data?");
     if (confirmReset) {
-      resetProfile();
-      setFormData(cloneProfile(defaultProfile));
-      setStatusMessage("Profile reset to defaults. Remember to customise again.");
+      setIsSaving(true);
+      try {
+        await resetProfile();
+        setFormData(cloneProfile(defaultProfile));
+        setStatusMessage("Profile reset to defaults. Remember to customise again.");
+      } catch (err: any) {
+        setStatusMessage(err?.message ?? "Failed to reset profile.");
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile) return;
+    setUploading(true);
+    setMediaError(null);
+    try {
+      const form = new FormData();
+      form.append("file", uploadFile);
+      const res = await fetch("/api/media", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Upload failed");
+      setStatusMessage(`Uploaded: ${data.url}`);
+      setUploadFile(null);
+      await loadMedia();
+    } catch (err: any) {
+      setMediaError(err?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteMedia = async (name: string) => {
+    const ok = window.confirm(`Delete ${name}?`);
+    if (!ok) return;
+    setMediaError(null);
+    try {
+      const res = await fetch(`/api/media?name=${encodeURIComponent(name)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data as any)?.error ?? "Delete failed");
+      await loadMedia();
+    } catch (err: any) {
+      setMediaError(err?.message ?? "Delete failed");
     }
   };
 
@@ -221,6 +309,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={handleReset}
+                disabled={isSaving}
                 className="rounded-full border border-white/20 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/70 hover:border-white/60"
               >
                 Reset defaults
@@ -228,9 +317,10 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={handleSave}
+                disabled={isSaving}
                 className="rounded-full border border-white px-6 py-2 text-xs uppercase tracking-[0.3em] text-black bg-white hover:bg-white/90"
               >
-                Save changes
+                {isSaving ? "Saving..." : "Save changes"}
               </button>
             </div>
           </div>
@@ -349,6 +439,16 @@ export default function AdminPage() {
             <div className="grid gap-4 md:grid-cols-3">
               {formData.stats.map((stat, index) => (
                 <div key={stat.label + index} className="rounded-2xl border border-white/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs uppercase tracking-[0.3em] text-white/40">Stat {index + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeStat(index)}
+                      className="text-xs uppercase tracking-[0.3em] text-white/40 hover:text-rose-400"
+                    >
+                      Remove
+                    </button>
+                  </div>
                   <TextField
                     label="Label"
                     value={stat.label}
@@ -361,6 +461,96 @@ export default function AdminPage() {
                   />
                 </div>
               ))}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={addStat}
+                className="rounded-full border border-white/20 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/70 hover:border-white/60"
+              >
+                Add stat
+              </button>
+            </div>
+          </ArticleCard>
+
+          <ArticleCard title="Section Intros">
+            <TextArea
+              label="Skills intro"
+              value={formData.skillsIntro}
+              onChange={(value) => updateProfileDraft((draft) => { draft.skillsIntro = value; })}
+            />
+            <TextArea
+              label="Projects intro"
+              value={formData.projectsIntro}
+              onChange={(value) => updateProfileDraft((draft) => { draft.projectsIntro = value; })}
+            />
+          </ArticleCard>
+
+          <ArticleCard title="Media">
+            <div className="flex flex-col gap-4">
+              <p className="text-sm text-white/60">
+                Upload images here, then copy the URL and paste it into fields like “Profile image path”, “Hero background media path”, or project “Image path”.
+              </p>
+
+              <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  className="text-sm text-white/70"
+                />
+                <button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={!uploadFile || uploading}
+                  className="rounded-full border border-white/20 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/70 hover:border-white/60 disabled:opacity-40"
+                >
+                  {uploading ? "Uploading..." : "Upload"}
+                </button>
+                <button
+                  type="button"
+                  onClick={loadMedia}
+                  disabled={mediaLoading}
+                  className="rounded-full border border-white/10 px-5 py-2 text-xs uppercase tracking-[0.3em] text-white/50 hover:border-white/40"
+                >
+                  {mediaLoading ? "Refreshing..." : "Refresh"}
+                </button>
+              </div>
+
+              {mediaError && (
+                <p className="text-sm text-rose-400">{mediaError}</p>
+              )}
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {mediaFiles.map((f) => (
+                  <div key={f.name} className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-black/40">
+                      {/* Using native img keeps this admin panel simple and avoids next/image config for dynamic uploads. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={f.url} alt={f.name} className="h-full w-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <div className="text-xs text-white/60 break-all">{f.url}</div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigator.clipboard.writeText(f.url)}
+                          className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-white/60 hover:border-white/40"
+                        >
+                          Copy URL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMedia(f.name)}
+                          className="rounded-full border border-white/10 px-4 py-2 text-[10px] uppercase tracking-[0.3em] text-white/50 hover:text-rose-400 hover:border-rose-400/40"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </ArticleCard>
 
